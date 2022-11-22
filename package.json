@@ -1,0 +1,28 @@
+{
+    "name": "pm2-autoscale",
+    "version": "1.0.0",
+    "description": "PM2 Sample Module",
+    "main": "index.js",
+    "dependencies": {
+        "pm2": "^5.2.2",
+        "pmx": "beta",
+        "typescript": "^4.9.3"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/keymetrics/pmx.git"
+    },
+    "scripts": {
+        "build": "tsc -p tsconfig.json",
+        "watch": "tsc -w -p tsconfig.json"
+    },
+    "apps": [
+        {
+            "merge_logs": true,
+            "max_memory_restart": "100M",
+            "script": "index.js"
+        }
+    ],
+    "author": "Viacheslav Volkov (vexell@gmail.com)",
+    "license": "MIT"
+}

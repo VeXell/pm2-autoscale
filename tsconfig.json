@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "target": "ES2015",
+        "module": "Node16",
+        "moduleResolution": "Node",
+        "rootDir": "./",
+        "allowSyntheticDefaultImports": true,
+        "importHelpers": true,
+        "alwaysStrict": true,
+        "sourceMap": false,
+        "forceConsistentCasingInFileNames": true,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitReturns": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noImplicitAny": false,
+        "noImplicitThis": false,
+        "strictNullChecks": false
+    },
+    "exclude": ["node_modules"]
+}
