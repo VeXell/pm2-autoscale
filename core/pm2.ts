@@ -10,13 +10,11 @@ const MIN_SECONDS_TO_RELEASE_WORKER = 30;
 
 const APPS: { [key: string]: App } = {};
 
-let backgroundTimer: number | undefined;
-
 export const startPm2Connect = (conf: IConfig) => {
     pm2.connect((err) => {
         if (err) return console.error(err.stack || err);
 
-        backgroundTimer = setInterval(function () {
+        setInterval(function () {
             pm2.list((err, apps) => {
                 if (err) return console.error(err.stack || err);
 
@@ -81,8 +79,6 @@ export const startPm2Connect = (conf: IConfig) => {
                 );
             }
         }, SHOW_STAT_INTERVAL);
-
-        console.log(backgroundTimer);
     });
 };
 

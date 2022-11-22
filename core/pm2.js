@@ -12,12 +12,11 @@ const MEMORY_MB = 1048576;
 const MIN_SECONDS_TO_ADD_WORKER = 30;
 const MIN_SECONDS_TO_RELEASE_WORKER = 30;
 const APPS = {};
-let backgroundTimer;
 const startPm2Connect = (conf) => {
     pm2_1.default.connect((err) => {
         if (err)
             return console.error(err.stack || err);
-        backgroundTimer = setInterval(function () {
+        setInterval(function () {
             pm2_1.default.list((err, apps) => {
                 if (err)
                     return console.error(err.stack || err);
@@ -67,7 +66,6 @@ const startPm2Connect = (conf) => {
                 console.log(`App "${app.getName()}" has ${app.getActiveWorkersCount()} worker(s). CPU: ${app.getCpuThreshold()}`);
             }
         }, SHOW_STAT_INTERVAL);
-        console.log(backgroundTimer);
     });
 };
 exports.startPm2Connect = startPm2Connect;
