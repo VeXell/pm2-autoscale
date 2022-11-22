@@ -9,7 +9,8 @@ const app_1 = require("./app");
 const WORKER_INTERVAL = 2000;
 const SHOW_STAT_INTERVAL = 10000;
 const MEMORY_MB = 1048576;
-const MIN_SECONDS_TO_SCALE_APP = 30;
+const MIN_SECONDS_TO_ADD_WORKER = 30;
+const MIN_SECONDS_TO_RELEASE_WORKER = 30;
 const APPS = {};
 let backgroundTimer;
 const startPm2Connect = (conf) => {
@@ -76,18 +77,28 @@ function processWorkingApp(conf, workingApp) {
     const averageCpuValue = Math.round(cpuValues.reduce((sum, value) => sum + value) / cpuValues.length);
     if (maxCpuValue >= conf.scale_cpu_threshold) {
         const now = Number(new Date());
-        const secondsDiff = Math.round((now - workingApp.getLastIncreasedWorkersTime()) / 1000);
-        if (secondsDiff > MIN_SECONDS_TO_SCALE_APP) {
-            console.log('Increase workers');
+        const secondsDiff = Math.round((now - workingApp.getLastIncreaseWorkersTime()) / 1000);
+        if (secondsDiff > MIN_SECONDS_TO_ADD_WORKER) {
+            console.log('INFO: Increase workers');
             pm2_1.default.scale(workingApp.getName(), '+1', () => {
                 console.log(`App "${workingApp.getName()}" scaled with +1 worker`);
             });
         }
     }
     else {
-        if (workingApp.getActiveWorkersCount > workingApp.getDefaultWorkersCount &&
+        if (workingApp.getActiveWorkersCount() > workingApp.getDefaultWorkersCount() &&
             averageCpuValue < conf.release_cpu_threshold) {
-            console.log('INFO: Decrease workers');
+            const now = Number(new Date());
+            const secondsDiff = Math.round((now - workingApp.getLastDecreaseWorkersTime()) / 1000);
+            if (secondsDiff > MIN_SECONDS_TO_RELEASE_WORKER) {
+                console.log('INFO: Decrease workers');
+                const newWorkers = workingApp.getActiveWorkersCount() - 1;
+                if (newWorkers >= workingApp.getDefaultWorkersCount()) {
+                    pm2_1.default.scale(workingApp.getName(), newWorkers, () => {
+                        console.log(`App "${workingApp.getName()}" scaled with -1 worker`);
+                    });
+                }
+            }
         }
     }
 }

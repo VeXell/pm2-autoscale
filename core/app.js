@@ -6,7 +6,8 @@ class App {
     constructor(name, instances) {
         this.pids = {};
         this.defaultWorkersCount = 0;
-        this.lastIncreasedWorkersTime = 0;
+        this.lastIncreaseWorkersTime = 0;
+        this.lastDecreaseWorkersTime = 0;
         this.name = name;
         this.defaultWorkersCount = instances;
     }
@@ -14,6 +15,7 @@ class App {
         Object.keys(this.pids).forEach((pid) => {
             if (activePids.indexOf(Number(pid)) === -1) {
                 delete this.pids[pid];
+                this.lastDecreaseWorkersTime = Number(new Date());
             }
         });
     }
@@ -26,7 +28,7 @@ class App {
                 memory: [pidData.memory],
                 cpu: [pidData.cpu],
             };
-            this.lastIncreasedWorkersTime = Number(new Date());
+            this.lastIncreaseWorkersTime = Number(new Date());
         }
         else {
             const memoryValues = [pidData.memory, ...this.pids[pid].memory].slice(0, MONIT_ITEMS_LIMIT);
@@ -46,8 +48,11 @@ class App {
         }
         return cpuValues;
     }
-    getLastIncreasedWorkersTime() {
-        return this.lastIncreasedWorkersTime;
+    getLastIncreaseWorkersTime() {
+        return this.lastIncreaseWorkersTime;
+    }
+    getLastDecreaseWorkersTime() {
+        return this.lastDecreaseWorkersTime;
     }
     getName() {
         return this.name;
