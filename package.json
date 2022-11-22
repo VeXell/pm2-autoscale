@@ -23,6 +23,10 @@
             "script": "index.js"
         }
     ],
+    "config": {
+        "scale_cpu_threshold": 40,
+        "release_cpu_threshold": 5
+    },
     "author": "Viacheslav Volkov (vexell@gmail.com)",
     "license": "MIT"
 }
