@@ -1,6 +1,6 @@
 # PM2-Autoscale
 
-PM2 module to help dynamically scale applications based on utilization demand.
+PM2 module to help dynamically scale applications based on utilization demand. [![npm version](https://badge.fury.io/js/pm2-autoscale.svg)](https://www.npmjs.com/package/pm2-autoscale)
 
 ## Motivation
 
