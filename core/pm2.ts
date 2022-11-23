@@ -1,12 +1,16 @@
 import pm2 from 'pm2';
+import os from 'node:os';
 
 import { App } from './app';
 
-const WORKER_INTERVAL = 2000;
+const WORKER_CHECK_INTERVAL = 1000;
 const SHOW_STAT_INTERVAL = 10000;
 const MEMORY_MB = 1048576;
 const MIN_SECONDS_TO_ADD_WORKER = 30;
 const MIN_SECONDS_TO_RELEASE_WORKER = 30;
+
+const TOTAL_CPUS = os.cpus().length;
+const MAX_AVAILABLE_WORKERS_COUNT = TOTAL_CPUS - 1;
 
 const APPS: { [key: string]: App } = {};
 
@@ -14,7 +18,7 @@ export const startPm2Connect = (conf: IConfig) => {
     pm2.connect((err) => {
         if (err) return console.error(err.stack || err);
 
-        setInterval(function () {
+        setInterval(() => {
             pm2.list((err, apps) => {
                 if (err) return console.error(err.stack || err);
 
@@ -57,7 +61,7 @@ export const startPm2Connect = (conf: IConfig) => {
 
                     const activePids = allAppsPids[app.name];
                     if (activePids) {
-                        APPS[app.name].removeNotActivePids(activePids);
+                        workingApp.removeNotActivePids(activePids);
                     }
 
                     workingApp.updatePid({
@@ -70,12 +74,12 @@ export const startPm2Connect = (conf: IConfig) => {
                     processWorkingApp(conf, workingApp);
                 });
             });
-        }, WORKER_INTERVAL);
+        }, WORKER_CHECK_INTERVAL);
 
-        setInterval(function () {
+        setInterval(() => {
             for (const [, app] of Object.entries(APPS)) {
                 console.log(
-                    `App "${app.getName()}" has ${app.getActiveWorkersCount()} worker(s). CPU: ${app.getCpuThreshold()}`
+                    `App "${app.getName()}" has ${app.getActiveWorkersCount()} worker(s). CPU: ${app.getCpuThreshold()}.`
                 );
             }
         }, SHOW_STAT_INTERVAL);
@@ -83,6 +87,11 @@ export const startPm2Connect = (conf: IConfig) => {
 };
 
 function processWorkingApp(conf: IConfig, workingApp: App) {
+    if (workingApp.isProcessing) {
+        console.log(`INFO: App "${workingApp.getName()}" is busy`);
+        return;
+    }
+
     const cpuValues = [...workingApp.getCpuThreshold()];
 
     const maxCpuValue = Math.max(...workingApp.getCpuThreshold());
@@ -90,20 +99,33 @@ function processWorkingApp(conf: IConfig, workingApp: App) {
         cpuValues.reduce((sum, value) => sum + value) / cpuValues.length
     );
 
-    if (maxCpuValue >= conf.scale_cpu_threshold) {
+    if (
+        // Increase workers if any of CPUs loaded more then "scale_cpu_threshold"
+        maxCpuValue >= conf.scale_cpu_threshold &&
+        // Increase workers only if we have available CPUs for that
+        workingApp.getActiveWorkersCount() < MAX_AVAILABLE_WORKERS_COUNT
+    ) {
         const now = Number(new Date());
         const secondsDiff = Math.round((now - workingApp.getLastIncreaseWorkersTime()) / 1000);
 
         if (secondsDiff > MIN_SECONDS_TO_ADD_WORKER) {
+            // Add small delay between increasing workers to detect load
             console.log('INFO: Increase workers');
+
+            workingApp.isProcessing = true;
+
             pm2.scale(workingApp.getName(), '+1', () => {
+                workingApp.updateLastIncreaseWorkersTime();
+                workingApp.isProcessing = false;
                 console.log(`App "${workingApp.getName()}" scaled with +1 worker`);
             });
         }
     } else {
         if (
-            workingApp.getActiveWorkersCount() > workingApp.getDefaultWorkersCount() &&
-            averageCpuValue < conf.release_cpu_threshold
+            // Decrease workers if average CPUs load less then "release_cpu_threshold"
+            averageCpuValue < conf.release_cpu_threshold &&
+            // Process only if we have more workers than default value
+            workingApp.getActiveWorkersCount() > workingApp.getDefaultWorkersCount()
         ) {
             const now = Number(new Date());
             const secondsDiff = Math.round((now - workingApp.getLastDecreaseWorkersTime()) / 1000);
@@ -112,9 +134,13 @@ function processWorkingApp(conf: IConfig, workingApp: App) {
                 console.log('INFO: Decrease workers');
                 const newWorkers = workingApp.getActiveWorkersCount() - 1;
 
+                workingApp.isProcessing = true;
+
                 if (newWorkers >= workingApp.getDefaultWorkersCount()) {
                     pm2.scale(workingApp.getName(), newWorkers, () => {
-                        console.log(`App "${workingApp.getName()}" scaled with -1 worker`);
+                        workingApp.updateLastDecreaseWorkersTime();
+                        workingApp.isProcessing = false;
+                        console.log(`App "${workingApp.getName()}" decresed one worker`);
                     });
                 }
             }

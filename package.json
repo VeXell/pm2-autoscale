@@ -24,9 +24,16 @@
         }
     ],
     "config": {
-        "scale_cpu_threshold": 40,
-        "release_cpu_threshold": 5
+        "scale_cpu_threshold": 30,
+        "release_cpu_threshold": 5,
+        "debug": false
     },
     "author": "Viacheslav Volkov (vexell@gmail.com)",
-    "license": "MIT"
+    "license": "MIT",
+    "devDependencies": {
+        "@types/node": "^18.11.9"
+    },
+    "engines": {
+        "node": ">=14"
+    }
 }

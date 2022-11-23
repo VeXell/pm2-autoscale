@@ -8,6 +8,7 @@ class App {
         this.defaultWorkersCount = 0;
         this.lastIncreaseWorkersTime = 0;
         this.lastDecreaseWorkersTime = 0;
+        this.isProcessing = false;
         this.name = name;
         this.defaultWorkersCount = instances;
     }
@@ -15,9 +16,10 @@ class App {
         Object.keys(this.pids).forEach((pid) => {
             if (activePids.indexOf(Number(pid)) === -1) {
                 delete this.pids[pid];
-                this.lastDecreaseWorkersTime = Number(new Date());
+                this.updateLastDecreaseWorkersTime();
             }
         });
+        return this;
     }
     updatePid(pidData) {
         const pid = pidData.id;
@@ -28,7 +30,7 @@ class App {
                 memory: [pidData.memory],
                 cpu: [pidData.cpu],
             };
-            this.lastIncreaseWorkersTime = Number(new Date());
+            this.updateLastIncreaseWorkersTime();
         }
         else {
             const memoryValues = [pidData.memory, ...this.pids[pid].memory].slice(0, MONIT_ITEMS_LIMIT);
@@ -36,6 +38,15 @@ class App {
             this.pids[pid].memory = memoryValues;
             this.pids[pid].cpu = cpuValues;
         }
+        return this;
+    }
+    updateLastIncreaseWorkersTime() {
+        this.lastIncreaseWorkersTime = Number(new Date());
+        return this;
+    }
+    updateLastDecreaseWorkersTime() {
+        this.lastDecreaseWorkersTime = Number(new Date());
+        return this;
     }
     getMonitValues() {
         return this.pids;
