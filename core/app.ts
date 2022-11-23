@@ -12,7 +12,7 @@ type IPidData = {
     cpu: number[];
 };
 
-const MONIT_ITEMS_LIMIT = 100;
+const MONIT_ITEMS_LIMIT = 60;
 
 export class App {
     private readonly pids: { [key: number]: IPidData } = {};
@@ -84,12 +84,29 @@ export class App {
 
         for (const [, entry] of Object.entries(this.pids)) {
             const value = Math.round(
-                entry.cpu.reduce((sum, cpuValue) => sum + cpuValue) / entry.cpu.length
+                entry.cpu.reduce((sum, value) => sum + value) / entry.cpu.length
             );
             cpuValues.push(value);
         }
 
         return cpuValues;
+    }
+
+    getAverageUsedMemory() {
+        const memoryValues = this.getAveragePidsMemory();
+        return Math.round(memoryValues.reduce((sum, value) => sum + value) / memoryValues.length);
+    }
+
+    getTotalUsedMemory() {
+        const memoryValues: number[] = [];
+
+        for (const [, entry] of Object.entries(this.pids)) {
+            if (entry.memory[0]) {
+                // Get the last memory value
+                memoryValues.push(entry.memory[0]);
+            }
+        }
+        return memoryValues.reduce((sum, value) => sum + value);
     }
 
     getLastIncreaseWorkersTime() {
@@ -110,5 +127,19 @@ export class App {
 
     getActiveWorkersCount() {
         return Object.keys(this.pids).length;
+    }
+
+    private getAveragePidsMemory() {
+        const memoryValues: number[] = [];
+
+        for (const [, entry] of Object.entries(this.pids)) {
+            // Collect average memory for every pid
+            const value = Math.round(
+                entry.memory.reduce((sum, value) => sum + value) / entry.memory.length
+            );
+            memoryValues.push(value);
+        }
+
+        return memoryValues;
     }
 }

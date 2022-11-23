@@ -7,10 +7,12 @@ exports.startPm2Connect = void 0;
 const pm2_1 = __importDefault(require("pm2"));
 const node_os_1 = __importDefault(require("node:os"));
 const app_1 = require("./app");
+const utils_1 = require("../utils");
+const logger_1 = require("../utils/logger");
 const WORKER_CHECK_INTERVAL = 1000;
 const SHOW_STAT_INTERVAL = 10000;
 const MEMORY_MB = 1048576;
-const MIN_SECONDS_TO_ADD_WORKER = 30;
+const MIN_SECONDS_TO_ADD_WORKER = 10;
 const MIN_SECONDS_TO_RELEASE_WORKER = 30;
 const TOTAL_CPUS = node_os_1.default.cpus().length;
 const MAX_AVAILABLE_WORKERS_COUNT = TOTAL_CPUS - 1;
@@ -30,6 +32,12 @@ const startPm2Connect = (conf) => {
                         allAppsPids[app.name] = [];
                     }
                     allAppsPids[app.name].push(app.pid);
+                });
+                Object.keys(APPS).forEach((appName) => {
+                    if (!allAppsPids[appName]) {
+                        // Delete app if not longer exists
+                        delete APPS[appName];
+                    }
                 });
                 apps.forEach((app) => {
                     const pm2_env = app.pm2_env;
@@ -64,37 +72,53 @@ const startPm2Connect = (conf) => {
                 });
             });
         }, WORKER_CHECK_INTERVAL);
-        setInterval(() => {
-            for (const [, app] of Object.entries(APPS)) {
-                console.log(`App "${app.getName()}" has ${app.getActiveWorkersCount()} worker(s). CPU: ${app.getCpuThreshold()}.`);
-            }
-        }, SHOW_STAT_INTERVAL);
+        if (conf.debug) {
+            setInterval(() => {
+                (0, logger_1.getLogger)().debug(`System: Free memory ${(0, utils_1.handleUnit)(node_os_1.default.freemem())}, Total memory: ${(0, utils_1.handleUnit)(node_os_1.default.totalmem())}`);
+                if (Object.keys(APPS).length) {
+                    for (const [, app] of Object.entries(APPS)) {
+                        (0, logger_1.getLogger)().debug(`App "${app.getName()}" has ${app.getActiveWorkersCount()} worker(s). CPU: ${app.getCpuThreshold()}, Memory: ${app.getTotalUsedMemory()}MB`);
+                    }
+                }
+                else {
+                    (0, logger_1.getLogger)().debug(`No apps available`);
+                }
+            }, SHOW_STAT_INTERVAL);
+        }
     });
 };
 exports.startPm2Connect = startPm2Connect;
 function processWorkingApp(conf, workingApp) {
     if (workingApp.isProcessing) {
-        console.log(`INFO: App "${workingApp.getName()}" is busy`);
+        (0, logger_1.getLogger)().debug(`App "${workingApp.getName()}" is busy`);
         return;
     }
     const cpuValues = [...workingApp.getCpuThreshold()];
     const maxCpuValue = Math.max(...workingApp.getCpuThreshold());
     const averageCpuValue = Math.round(cpuValues.reduce((sum, value) => sum + value) / cpuValues.length);
+    const freeMem = Math.round(node_os_1.default.freemem() / MEMORY_MB);
+    const avgAppUseMemory = workingApp.getAverageUsedMemory();
+    const memoryAfterNewWorker = freeMem - avgAppUseMemory;
+    if (memoryAfterNewWorker <= 0) {
+        (0, logger_1.getLogger)().debug(`Not enought memory to increase worker for app "${workingApp.getName()}". Free memory ${freeMem}MB, App average memeory ${avgAppUseMemory}MB `);
+    }
     if (
     // Increase workers if any of CPUs loaded more then "scale_cpu_threshold"
     maxCpuValue >= conf.scale_cpu_threshold &&
+        // Increase workers only if we have anought free memory
+        memoryAfterNewWorker > 0 &&
         // Increase workers only if we have available CPUs for that
         workingApp.getActiveWorkersCount() < MAX_AVAILABLE_WORKERS_COUNT) {
         const now = Number(new Date());
         const secondsDiff = Math.round((now - workingApp.getLastIncreaseWorkersTime()) / 1000);
         if (secondsDiff > MIN_SECONDS_TO_ADD_WORKER) {
             // Add small delay between increasing workers to detect load
-            console.log('INFO: Increase workers');
+            (0, logger_1.getLogger)().debug(`Increase workers for app "${workingApp.getName()}"`);
             workingApp.isProcessing = true;
             pm2_1.default.scale(workingApp.getName(), '+1', () => {
                 workingApp.updateLastIncreaseWorkersTime();
                 workingApp.isProcessing = false;
-                console.log(`App "${workingApp.getName()}" scaled with +1 worker`);
+                (0, logger_1.getLogger)().debug(`App "${workingApp.getName()}" scaled with +1 worker`);
             });
         }
     }
@@ -107,14 +131,14 @@ function processWorkingApp(conf, workingApp) {
             const now = Number(new Date());
             const secondsDiff = Math.round((now - workingApp.getLastDecreaseWorkersTime()) / 1000);
             if (secondsDiff > MIN_SECONDS_TO_RELEASE_WORKER) {
-                console.log('INFO: Decrease workers');
+                (0, logger_1.getLogger)().debug(`Decrease workers for app "${workingApp.getName()}"`);
                 const newWorkers = workingApp.getActiveWorkersCount() - 1;
                 workingApp.isProcessing = true;
                 if (newWorkers >= workingApp.getDefaultWorkersCount()) {
                     pm2_1.default.scale(workingApp.getName(), newWorkers, () => {
                         workingApp.updateLastDecreaseWorkersTime();
                         workingApp.isProcessing = false;
-                        console.log(`App "${workingApp.getName()}" decresed one worker`);
+                        (0, logger_1.getLogger)().debug(`App "${workingApp.getName()}" decresed one worker`);
                     });
                 }
             }

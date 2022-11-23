@@ -6,13 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // @ts-ignore
 const pmx_1 = __importDefault(require("pmx"));
 const pm2_1 = require("./core/pm2");
-/*pmx.configureModule({
-    human_info: [
-        ['Status', 'Module ready!'],
-        ['Comment', 'This is a superb comment the user should see'],
-        ['IP', 'my machine ip!'],
-    ],
-});*/
+const logger_1 = require("./utils/logger");
 pmx_1.default.initModule({
     widget: {
         el: {
@@ -28,5 +22,13 @@ pmx_1.default.initModule({
 }, function (err, conf) {
     if (err)
         return console.error(err.stack || err);
-    (0, pm2_1.startPm2Connect)(conf.module_conf);
+    const moduleConfig = conf.module_conf;
+    (0, logger_1.initLogger)({ isDebug: moduleConfig.debug });
+    (0, pm2_1.startPm2Connect)(moduleConfig);
+    pmx_1.default.configureModule({
+        human_info: [
+            ['Status', 'Module enabled'],
+            ['Debug', moduleConfig.debug ? 'Enabled' : 'Disabled'],
+        ],
+    });
 });

@@ -1,7 +1,7 @@
 {
     "name": "pm2-autoscale",
     "version": "1.0.0",
-    "description": "PM2 Sample Module",
+    "description": "PM2 module to help dynamically scale applications based on utilization demand",
     "main": "index.js",
     "dependencies": {
         "pm2": "^5.2.2",
@@ -10,7 +10,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/keymetrics/pmx.git"
+        "url": "https://github.com/VeXell/pm2-autoscale.git"
     },
     "scripts": {
         "build": "tsc -p tsconfig.json",

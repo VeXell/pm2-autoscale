@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.App = void 0;
-const MONIT_ITEMS_LIMIT = 100;
+const MONIT_ITEMS_LIMIT = 60;
 class App {
     constructor(name, instances) {
         this.pids = {};
@@ -54,10 +54,24 @@ class App {
     getCpuThreshold() {
         const cpuValues = [];
         for (const [, entry] of Object.entries(this.pids)) {
-            const value = Math.round(entry.cpu.reduce((sum, cpuValue) => sum + cpuValue) / entry.cpu.length);
+            const value = Math.round(entry.cpu.reduce((sum, value) => sum + value) / entry.cpu.length);
             cpuValues.push(value);
         }
         return cpuValues;
+    }
+    getAverageUsedMemory() {
+        const memoryValues = this.getAveragePidsMemory();
+        return Math.round(memoryValues.reduce((sum, value) => sum + value) / memoryValues.length);
+    }
+    getTotalUsedMemory() {
+        const memoryValues = [];
+        for (const [, entry] of Object.entries(this.pids)) {
+            if (entry.memory[0]) {
+                // Get the last memory value
+                memoryValues.push(entry.memory[0]);
+            }
+        }
+        return memoryValues.reduce((sum, value) => sum + value);
     }
     getLastIncreaseWorkersTime() {
         return this.lastIncreaseWorkersTime;
@@ -73,6 +87,15 @@ class App {
     }
     getActiveWorkersCount() {
         return Object.keys(this.pids).length;
+    }
+    getAveragePidsMemory() {
+        const memoryValues = [];
+        for (const [, entry] of Object.entries(this.pids)) {
+            // Collect average memory for every pid
+            const value = Math.round(entry.memory.reduce((sum, value) => sum + value) / entry.memory.length);
+            memoryValues.push(value);
+        }
+        return memoryValues;
     }
 }
 exports.App = App;
