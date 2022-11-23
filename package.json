@@ -8,10 +8,6 @@
         "pmx": "beta",
         "typescript": "^4.9.3"
     },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/VeXell/pm2-autoscale.git"
-    },
     "scripts": {
         "build": "tsc -p tsconfig.json",
         "watch": "tsc -w -p tsconfig.json"
@@ -28,12 +24,25 @@
         "release_cpu_threshold": 5,
         "debug": false
     },
-    "author": "Viacheslav Volkov (vexell@gmail.com)",
-    "license": "MIT",
     "devDependencies": {
         "@types/node": "^18.11.9"
     },
     "engines": {
         "node": ">=14"
-    }
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/VeXell/pm2-autoscale.git"
+    },
+    "author": "Viacheslav Volkov (vexell@gmail.com)",
+    "license": "MIT",
+    "keywords": [
+        "PM2",
+        "Autoscale",
+        "Configuration",
+        "Scaling",
+        "Scale",
+        "Utilization",
+        "Module"
+    ]
 }
