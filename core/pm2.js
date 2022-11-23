@@ -96,19 +96,20 @@ function processWorkingApp(conf, workingApp) {
     const cpuValues = [...workingApp.getCpuThreshold()];
     const maxCpuValue = Math.max(...workingApp.getCpuThreshold());
     const averageCpuValue = Math.round(cpuValues.reduce((sum, value) => sum + value) / cpuValues.length);
-    const freeMem = Math.round(node_os_1.default.freemem() / MEMORY_MB);
-    const avgAppUseMemory = workingApp.getAverageUsedMemory();
-    const memoryAfterNewWorker = freeMem - avgAppUseMemory;
-    if (memoryAfterNewWorker <= 0) {
-        (0, logger_1.getLogger)().debug(`Not enought memory to increase worker for app "${workingApp.getName()}". Free memory ${freeMem}MB, App average memeory ${avgAppUseMemory}MB `);
-    }
-    if (
+    const needIncreaseInstances = 
     // Increase workers if any of CPUs loaded more then "scale_cpu_threshold"
     maxCpuValue >= conf.scale_cpu_threshold &&
-        // Increase workers only if we have anought free memory
-        memoryAfterNewWorker > 0 &&
         // Increase workers only if we have available CPUs for that
-        workingApp.getActiveWorkersCount() < MAX_AVAILABLE_WORKERS_COUNT) {
+        workingApp.getActiveWorkersCount() < MAX_AVAILABLE_WORKERS_COUNT;
+    if (needIncreaseInstances) {
+        const freeMem = Math.round(node_os_1.default.freemem() / MEMORY_MB);
+        const avgAppUseMemory = workingApp.getAverageUsedMemory();
+        const memoryAfterNewWorker = freeMem - avgAppUseMemory;
+        if (memoryAfterNewWorker <= 0) {
+            // Increase workers only if we have anought free memory
+            (0, logger_1.getLogger)().debug(`Not enought memory to increase worker for app "${workingApp.getName()}". Free memory ${freeMem}MB, App average memeory ${avgAppUseMemory}MB `);
+            return;
+        }
         const now = Number(new Date());
         const secondsDiff = Math.round((now - workingApp.getLastIncreaseWorkersTime()) / 1000);
         if (secondsDiff > MIN_SECONDS_TO_ADD_WORKER) {
