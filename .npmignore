@@ -1,0 +1,4 @@
+**/**.ts
+tsconfig.json
+@types
+.prettierrc.js
