@@ -151,7 +151,7 @@ function processWorkingApp(conf: IConfig, workingApp: App) {
             pm2.scale(workingApp.getName(), '+1', () => {
                 workingApp.updateLastIncreaseWorkersTime();
                 workingApp.isProcessing = false;
-                getLogger().debug(`App "${workingApp.getName()}" scaled with +1 worker`);
+                getLogger().info(`App "${workingApp.getName()}" scaled with +1 worker`);
             });
         }
     } else {
@@ -174,7 +174,7 @@ function processWorkingApp(conf: IConfig, workingApp: App) {
                     pm2.scale(workingApp.getName(), newWorkers, () => {
                         workingApp.updateLastDecreaseWorkersTime();
                         workingApp.isProcessing = false;
-                        getLogger().debug(`App "${workingApp.getName()}" decresed one worker`);
+                        getLogger().info(`App "${workingApp.getName()}" decresed one worker`);
                     });
                 }
             }

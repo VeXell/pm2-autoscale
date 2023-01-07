@@ -119,7 +119,7 @@ function processWorkingApp(conf, workingApp) {
             pm2_1.default.scale(workingApp.getName(), '+1', () => {
                 workingApp.updateLastIncreaseWorkersTime();
                 workingApp.isProcessing = false;
-                (0, logger_1.getLogger)().debug(`App "${workingApp.getName()}" scaled with +1 worker`);
+                (0, logger_1.getLogger)().info(`App "${workingApp.getName()}" scaled with +1 worker`);
             });
         }
     }
@@ -139,7 +139,7 @@ function processWorkingApp(conf, workingApp) {
                     pm2_1.default.scale(workingApp.getName(), newWorkers, () => {
                         workingApp.updateLastDecreaseWorkersTime();
                         workingApp.isProcessing = false;
-                        (0, logger_1.getLogger)().debug(`App "${workingApp.getName()}" decresed one worker`);
+                        (0, logger_1.getLogger)().info(`App "${workingApp.getName()}" decresed one worker`);
                     });
                 }
             }
