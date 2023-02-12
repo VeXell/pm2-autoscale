@@ -1,12 +1,11 @@
 {
     "name": "pm2-autoscale",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "description": "PM2 module to help dynamically scale applications based on utilization demand",
     "main": "index.js",
     "dependencies": {
         "pm2": "^5.2.2",
-        "pmx": "beta",
-        "typescript": "^4.9.3"
+        "pmx": "beta"
     },
     "scripts": {
         "build": "tsc -p tsconfig.json",
@@ -25,7 +24,8 @@
         "debug": false
     },
     "devDependencies": {
-        "@types/node": "^18.11.9"
+        "@types/node": "^18.11.9",
+        "typescript": "^4.9.5"
     },
     "engines": {
         "node": ">=14"
