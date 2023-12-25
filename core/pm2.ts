@@ -4,6 +4,7 @@ import os from 'node:os';
 import { App } from './app';
 import { handleUnit } from '../utils';
 import { getLogger } from '../utils/logger';
+import { getCpuCount } from '../utils/cpu';
 
 const WORKER_CHECK_INTERVAL = 1000;
 const SHOW_STAT_INTERVAL = 10000;
@@ -11,7 +12,7 @@ const MEMORY_MB = 1048576;
 const MIN_SECONDS_TO_ADD_WORKER = 10;
 const MIN_SECONDS_TO_RELEASE_WORKER = 30;
 
-const TOTAL_CPUS = os.cpus().length;
+const TOTAL_CPUS = getCpuCount();
 const MAX_AVAILABLE_WORKERS_COUNT = TOTAL_CPUS - 1;
 
 const APPS: { [key: string]: App } = {};

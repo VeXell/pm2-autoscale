@@ -3,7 +3,7 @@
         "target": "ES2015",
         "module": "Node16",
         "lib": ["ES2017", "DOM"],
-        "moduleResolution": "Node",
+        // "moduleResolution": "Node",
         "rootDir": "./",
         "allowSyntheticDefaultImports": true,
         "importHelpers": true,
