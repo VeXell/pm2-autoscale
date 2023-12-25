@@ -1,6 +1,6 @@
 {
     "name": "pm2-autoscale",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "description": "PM2 module to help dynamically scale applications based on utilization demand",
     "main": "index.js",
     "dependencies": {
@@ -11,6 +11,10 @@
         "build": "tsc -p tsconfig.json",
         "watch": "tsc -w -p tsconfig.json"
     },
+    "files": [
+        "README.md",
+        "**/*.js"
+    ],
     "apps": [
         {
             "merge_logs": true,
