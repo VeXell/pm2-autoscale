@@ -9,7 +9,8 @@
     },
     "scripts": {
         "build": "tsc -p tsconfig.json",
-        "watch": "tsc -w -p tsconfig.json"
+        "watch": "tsc -w -p tsconfig.json",
+        "publish": "npm run build && npm publish"
     },
     "files": [
         "README.md",
