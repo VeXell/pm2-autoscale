@@ -128,6 +128,14 @@ function processWorkingApp(conf: IConfig, workingApp: App) {
         workingApp.getActiveWorkersCount() < MAX_AVAILABLE_WORKERS_COUNT;
 
     if (needIncreaseInstances) {
+        getLogger().info(
+            `App "${workingApp.getName()}" needs increase instance because ${maxCpuValue}>${
+                conf.scale_cpu_threshold
+            }. CPUs ${JSON.stringify(cpuValues)}`
+        );
+    }
+
+    if (needIncreaseInstances) {
         const freeMem = Math.round(os.freemem() / MEMORY_MB);
         const avgAppUseMemory = workingApp.getAverageUsedMemory();
         const memoryAfterNewWorker = freeMem - avgAppUseMemory;
