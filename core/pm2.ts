@@ -52,7 +52,7 @@ const detectActiveApps = (conf: IConfig) => {
         if (err) return console.error(err.stack || err);
 
         const pidsMonit: IPidsData = {};
-        const mapAppPids: { [key: string]: { pids: number[] } } = {};
+        const mapAppPids: { [key: string]: { pids: number[]; pm2Env: pm2.Pm2Env } } = {};
 
         // Fill all available apps pids
         apps.forEach((app) => {
@@ -62,9 +62,12 @@ const detectActiveApps = (conf: IConfig) => {
                 return;
             }
 
+            const pm2Env = app.pm2_env as pm2.Pm2Env;
+
             if (!mapAppPids[appName]) {
                 mapAppPids[appName] = {
                     pids: [],
+                    pm2Env,
                 };
             }
 
@@ -93,18 +96,11 @@ const detectActiveApps = (conf: IConfig) => {
         });
 
         // Create new apps if not exist
-        apps.forEach((app) => {
-            const pm2_env = app.pm2_env as pm2.Pm2Env;
-            const appName = app.name;
-
-            if (!isMonitoringApp(app) || !appName) {
-                return;
+        for (const [appName, entry] of Object.entries(mapAppPids)) {
+            if (entry.pids.length && !APPS[appName]) {
+                APPS[appName] = new App(appName, entry.pm2Env.instances);
             }
-
-            if (!APPS[appName]) {
-                APPS[appName] = new App(appName, pm2_env.instances);
-            }
-        });
+        }
 
         // Get all pids to monit
         const pids = Object.keys(pidsMonit);
