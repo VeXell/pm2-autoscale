@@ -12,7 +12,7 @@ type IPidData = {
     cpu: number[];
 };
 
-const MONIT_ITEMS_LIMIT = 60;
+const MONIT_ITEMS_LIMIT = 30;
 
 export class App {
     private readonly pids: { [key: number]: IPidData } = {};
