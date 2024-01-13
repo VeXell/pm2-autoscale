@@ -1,4 +1,4 @@
-type IPidDataInput = {
+export type IPidDataInput = {
     id: number;
     pmId: number;
     memory: number;

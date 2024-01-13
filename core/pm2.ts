@@ -2,13 +2,12 @@ import pm2 from 'pm2';
 import os from 'node:os';
 import pidusage from 'pidusage';
 
-import { App } from './app';
+import { App, IPidDataInput } from './app';
 import { handleUnit } from '../utils';
 import { getLogger } from '../utils/logger';
 import { getCpuCount } from '../utils/cpu';
 
-type IPidData = { cpu: number; memory: number; pmId: number; pid: number };
-type IPidsData = Record<number, IPidData>;
+type IPidsData = Record<number, IPidDataInput>;
 
 const WORKER_CHECK_INTERVAL = 1000;
 const SHOW_STAT_INTERVAL = 10000;
@@ -37,9 +36,9 @@ const isMonitoringApp = (app: pm2.ProcessDescription) => {
     return true;
 };
 
-const updateAppPidsData = (workingApp: App, pidData: IPidData) => {
+const updateAppPidsData = (workingApp: App, pidData: IPidDataInput) => {
     workingApp.updatePid({
-        id: pidData.pid,
+        id: pidData.id,
         memory: Math.round((pidData.memory || 0) / MEMORY_MB),
         cpu: pidData.cpu || 0,
         pmId: pidData.pmId,
@@ -72,7 +71,7 @@ const detectActiveApps = (conf: IConfig) => {
             mapAppPids[appName].pids.push(app.pid);
 
             // Fill monitoring data
-            pidsMonit[app.pid] = { cpu: 0, memory: 0, pmId: app.pm_id, pid: app.pid };
+            pidsMonit[app.pid] = { cpu: 0, memory: 0, pmId: app.pm_id, id: app.pid };
         });
 
         // Filters existed apps which do not have active pids
