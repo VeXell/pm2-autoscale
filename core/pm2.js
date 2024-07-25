@@ -170,7 +170,7 @@ function processWorkingApp(conf, workingApp) {
             // Add small delay between increasing workers to detect load
             (0, logger_1.getLogger)().debug(`Increase workers for app "${workingApp.getName()}"`);
             workingApp.isProcessing = true;
-            if (!conf.ignoreApp.split(',').includes(workingApp.getName())) {
+            if (!conf.ignore_apps.split(',').includes(workingApp.getName())) {
                 pm2_1.default.scale(workingApp.getName(), '+1', () => {
                     workingApp.updateLastIncreaseWorkersTime();
                     workingApp.isProcessing = false;
@@ -178,7 +178,7 @@ function processWorkingApp(conf, workingApp) {
                 });
             }
             else {
-                (0, logger_1.getLogger)().info(`Skiped app because it's in ignore list: ${conf.ignoreApp}`);
+                (0, logger_1.getLogger)().info(`Skiped app because it's in ignore list: ${conf.ignore_apps}`);
             }
         }
     }

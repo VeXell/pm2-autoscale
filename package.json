@@ -27,7 +27,8 @@
     "config": {
         "scale_cpu_threshold": 30,
         "release_cpu_threshold": 5,
-        "debug": false
+        "debug": false,
+        "ignore_apps": ""
     },
     "devDependencies": {
         "@types/node": "^18.19.3",
