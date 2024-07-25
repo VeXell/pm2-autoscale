@@ -192,6 +192,7 @@ function processWorkingApp(conf: IConfig, workingApp: App) {
         maxCpuValue >= conf.scale_cpu_threshold &&
         // Increase workers only if we have available CPUs for that
         workingApp.getActiveWorkersCount() < MAX_AVAILABLE_WORKERS_COUNT;
+    const isIgnoreApp = conf.ignore_apps.split(',').includes(workingApp.getName());
 
     if (needIncreaseInstances) {
         getLogger().info(
@@ -199,9 +200,12 @@ function processWorkingApp(conf: IConfig, workingApp: App) {
                 conf.scale_cpu_threshold
             }. CPUs ${JSON.stringify(cpuValues)}`
         );
+        if (isIgnoreApp) {
+            getLogger().info(`Skiped app because it's in ignore list: ${conf.ignore_apps}`);
+        }
     }
 
-    if (needIncreaseInstances) {
+    if (needIncreaseInstances && !isIgnoreApp) {
         const freeMem = Math.round(os.freemem() / MEMORY_MB);
         const avgAppUseMemory = workingApp.getAverageUsedMemory();
         const memoryAfterNewWorker = freeMem - avgAppUseMemory;
@@ -222,15 +226,12 @@ function processWorkingApp(conf: IConfig, workingApp: App) {
             getLogger().debug(`Increase workers for app "${workingApp.getName()}"`);
 
             workingApp.isProcessing = true;
-            if (!conf.ignore_apps.split(',').includes(workingApp.getName())) {
-                pm2.scale(workingApp.getName(), '+1', () => {
-                    workingApp.updateLastIncreaseWorkersTime();
-                    workingApp.isProcessing = false;
-                    getLogger().info(`App "${workingApp.getName()}" scaled with +1 worker`);
-                });
-            } else {
-                getLogger().info(`Skiped app because it's in ignore list: ${conf.ignore_apps}`);
-            }
+
+            pm2.scale(workingApp.getName(), '+1', () => {
+                workingApp.updateLastIncreaseWorkersTime();
+                workingApp.isProcessing = false;
+                getLogger().info(`App "${workingApp.getName()}" scaled with +1 worker`);
+            });
         }
     } else {
         if (

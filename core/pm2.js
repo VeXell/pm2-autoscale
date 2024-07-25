@@ -152,10 +152,14 @@ function processWorkingApp(conf, workingApp) {
     maxCpuValue >= conf.scale_cpu_threshold &&
         // Increase workers only if we have available CPUs for that
         workingApp.getActiveWorkersCount() < MAX_AVAILABLE_WORKERS_COUNT;
+    const isIgnoreApp = conf.ignore_apps.split(',').includes(workingApp.getName());
     if (needIncreaseInstances) {
         (0, logger_1.getLogger)().info(`App "${workingApp.getName()}" needs increase instance because ${maxCpuValue}>${conf.scale_cpu_threshold}. CPUs ${JSON.stringify(cpuValues)}`);
+        if (isIgnoreApp) {
+            (0, logger_1.getLogger)().info(`Skiped app because it's in ignore list: ${conf.ignore_apps}`);
+        }
     }
-    if (needIncreaseInstances) {
+    if (needIncreaseInstances && !isIgnoreApp) {
         const freeMem = Math.round(node_os_1.default.freemem() / MEMORY_MB);
         const avgAppUseMemory = workingApp.getAverageUsedMemory();
         const memoryAfterNewWorker = freeMem - avgAppUseMemory;
@@ -170,16 +174,11 @@ function processWorkingApp(conf, workingApp) {
             // Add small delay between increasing workers to detect load
             (0, logger_1.getLogger)().debug(`Increase workers for app "${workingApp.getName()}"`);
             workingApp.isProcessing = true;
-            if (!conf.ignore_apps.split(',').includes(workingApp.getName())) {
-                pm2_1.default.scale(workingApp.getName(), '+1', () => {
-                    workingApp.updateLastIncreaseWorkersTime();
-                    workingApp.isProcessing = false;
-                    (0, logger_1.getLogger)().info(`App "${workingApp.getName()}" scaled with +1 worker`);
-                });
-            }
-            else {
-                (0, logger_1.getLogger)().info(`Skiped app because it's in ignore list: ${conf.ignore_apps}`);
-            }
+            pm2_1.default.scale(workingApp.getName(), '+1', () => {
+                workingApp.updateLastIncreaseWorkersTime();
+                workingApp.isProcessing = false;
+                (0, logger_1.getLogger)().info(`App "${workingApp.getName()}" scaled with +1 worker`);
+            });
         }
     }
     else {
