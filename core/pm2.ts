@@ -222,12 +222,15 @@ function processWorkingApp(conf: IConfig, workingApp: App) {
             getLogger().debug(`Increase workers for app "${workingApp.getName()}"`);
 
             workingApp.isProcessing = true;
-
-            pm2.scale(workingApp.getName(), '+1', () => {
-                workingApp.updateLastIncreaseWorkersTime();
-                workingApp.isProcessing = false;
-                getLogger().info(`App "${workingApp.getName()}" scaled with +1 worker`);
-            });
+            if (!conf.ignoreApp.split(',').includes(workingApp.getName())) {
+                pm2.scale(workingApp.getName(), '+1', () => {
+                    workingApp.updateLastIncreaseWorkersTime();
+                    workingApp.isProcessing = false;
+                    getLogger().info(`App "${workingApp.getName()}" scaled with +1 worker`);
+                });
+            } else {
+                getLogger().info(`Skiped app because it's in ignore list: ${conf.ignoreApp}`);
+            }
         }
     } else {
         if (
