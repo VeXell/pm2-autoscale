@@ -25,10 +25,10 @@
         }
     ],
     "config": {
-        "scale_cpu_threshold": 30,
+        "scale_cpu_threshold": 80,
         "release_cpu_threshold": 5,
         "debug": false,
-        "ignore_apps": ""
+        "ignore_apps": "s8gw2,gw2"
     },
     "devDependencies": {
         "@types/node": "^18.19.3",
