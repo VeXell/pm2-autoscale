@@ -8,6 +8,7 @@ import { getLogger } from '../utils/logger';
 import { getCpuCount } from '../utils/cpu';
 
 type IPidsData = Record<number, IPidDataInput>;
+type IAppData = { pids: number[]; pm2Env: pm2.Pm2Env; appConfig: IAppEnvConfig };
 
 const WORKER_CHECK_INTERVAL = 1000;
 const SHOW_STAT_INTERVAL = 10000;
@@ -45,6 +46,23 @@ const updateAppPidsData = (workingApp: App, pidData: IPidDataInput) => {
     });
 };
 
+const getPm2AutoscaleConfig = (app: pm2.ProcessDescription) => {
+    const pm2_env = app.pm2_env as pm2.Pm2Env;
+    const logger = getLogger();
+
+    let config: IAppEnvConfig = {};
+
+    if (pm2_env.env.pm2_autoscale) {
+        try {
+            config = JSON.parse(pm2_env.env.pm2_autoscale);
+        } catch (error) {
+            logger.debug(`Error: Can not parse "pm2_autoscale" env config for app ${app.name}`);
+        }
+    }
+
+    return config;
+};
+
 const detectActiveApps = (conf: IConfig) => {
     const logger = getLogger();
 
@@ -52,7 +70,10 @@ const detectActiveApps = (conf: IConfig) => {
         if (err) return console.error(err.stack || err);
 
         const pidsMonit: IPidsData = {};
-        const mapAppPids: { [key: string]: { pids: number[]; pm2Env: pm2.Pm2Env } } = {};
+        const mapAppData: { [key: string]: IAppData } = {};
+        const appsToIgnore = (conf.ignore_apps ? conf.ignore_apps.split(',') : []).map((entry) =>
+            entry.trim()
+        );
 
         // Fill all available apps pids
         apps.forEach((app) => {
@@ -62,16 +83,31 @@ const detectActiveApps = (conf: IConfig) => {
                 return;
             }
 
+            if (appsToIgnore.includes(appName)) {
+                logger.debug(`App ${appName} is in ignore list`);
+                delete APPS[appName];
+                return;
+            }
+
+            const appConfig = getPm2AutoscaleConfig(app);
+
+            if (appConfig.is_enabled === false) {
+                logger.debug(`Autoscale module is disabled in the app ${appName}`);
+                delete APPS[appName];
+                return;
+            }
+
             const pm2Env = app.pm2_env as pm2.Pm2Env;
 
-            if (!mapAppPids[appName]) {
-                mapAppPids[appName] = {
+            if (!mapAppData[appName]) {
+                mapAppData[appName] = {
                     pids: [],
                     pm2Env,
+                    appConfig,
                 };
             }
 
-            mapAppPids[appName].pids.push(app.pid);
+            mapAppData[appName].pids.push(app.pid);
 
             // Fill monitoring data
             pidsMonit[app.pid] = { cpu: 0, memory: 0, pmId: app.pm_id, id: app.pid };
@@ -79,7 +115,7 @@ const detectActiveApps = (conf: IConfig) => {
 
         // Filters existed apps which do not have active pids
         Object.keys(APPS).forEach((appName) => {
-            const processingApp = mapAppPids[appName];
+            const processingApp = mapAppData[appName];
 
             if (!processingApp) {
                 logger.debug(`Delete ${appName} because it not longer exists`);
@@ -91,12 +127,15 @@ const detectActiveApps = (conf: IConfig) => {
                     const activePids = processingApp.pids;
 
                     workingApp.removeNotActivePids(activePids);
+
+                    // Set new config data
+                    workingApp.setAppConfig(mapAppData[appName].appConfig);
                 }
             }
         });
 
         // Create new apps if not exist
-        for (const [appName, entry] of Object.entries(mapAppPids)) {
+        for (const [appName, entry] of Object.entries(mapAppData)) {
             if (entry.pids.length && !APPS[appName]) {
                 APPS[appName] = new App(appName, entry.pm2Env.instances);
             }
@@ -123,7 +162,7 @@ const detectActiveApps = (conf: IConfig) => {
                     }
                 }
 
-                for (const [appName, entry] of Object.entries(mapAppPids)) {
+                for (const [appName, entry] of Object.entries(mapAppData)) {
                     const workingApp = APPS[appName];
 
                     if (workingApp) {

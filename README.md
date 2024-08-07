@@ -22,12 +22,13 @@ pm2 install pm2-autoscale
 pm2 uninstall pm2-autoscale
 ```
 
-## Configuration
+## Module Configuration
 
 Default settings:
 
 -   `scale_cpu_threshold` Maximum value of CPU utilization one of application instances when the module will try to increase application instances. (default to `30`)
 -   `release_cpu_threshold` Average value of all CPUs utilization of the application when the module will decrease application instances (default to `5`)
+-   `ignore_apps` Global setting to skip any app from the autoscale. You can enter multiple apps names separated by comma (default to "" - empty string)
 -   `debug` Enable debug mode to show logs from the module (default to `false`)
 
 To modify the module config values you can use the following commands:
@@ -35,4 +36,12 @@ To modify the module config values you can use the following commands:
 ```bash
 pm2 set pm2-autoscale:debug true
 pm2 set pm2-autoscale:scale_cpu_threshold 50
+pm2 set pm2-autoscale:ignore_apps app1,app2
 ```
+
+## Change log
+
+### Version 1.3.0
+
+-   Add new config option `ignore_apps` exclude apps from autoscale
+-   Add specific app configuration for `scale_cpu_threshold` and `release_cpu_threshold` in `env` section of your `ecosystem.config` file.

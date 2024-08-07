@@ -18,6 +18,8 @@ export class App {
     private readonly pids: { [key: number]: IPidData } = {};
     private readonly name: string;
     private readonly defaultWorkersCount: number = 0;
+    private appConfig: IAppEnvConfig = {};
+
     private lastIncreaseWorkersTime: number = 0;
     private lastDecreaseWorkersTime: number = 0;
 
@@ -127,6 +129,14 @@ export class App {
 
     getActiveWorkersCount() {
         return Object.keys(this.pids).length;
+    }
+
+    getAppConfig() {
+        return this.appConfig;
+    }
+
+    setAppConfig(appConfig: IAppEnvConfig) {
+        this.appConfig = appConfig;
     }
 
     private getAveragePidsMemory() {
