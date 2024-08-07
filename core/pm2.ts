@@ -226,17 +226,22 @@ function processWorkingApp(conf: IConfig, workingApp: App) {
         cpuValues.reduce((sum, value) => sum + value) / cpuValues.length
     );
 
+    const scaleCpuThreshold =
+        workingApp.getAppConfig().scale_cpu_threshold ?? conf.scale_cpu_threshold;
+    const releaseCpuThreshold =
+        workingApp.getAppConfig().release_cpu_threshold ?? conf.release_cpu_threshold;
+
     const needIncreaseInstances =
-        // Increase workers if any of CPUs loaded more then "scale_cpu_threshold"
-        maxCpuValue >= conf.scale_cpu_threshold &&
+        // Increase workers if any of CPUs loaded more then "scaleCpuThreshold"
+        maxCpuValue >= scaleCpuThreshold &&
         // Increase workers only if we have available CPUs for that
         workingApp.getActiveWorkersCount() < MAX_AVAILABLE_WORKERS_COUNT;
 
     if (needIncreaseInstances) {
         getLogger().info(
-            `App "${workingApp.getName()}" needs increase instance because ${maxCpuValue}>${
-                conf.scale_cpu_threshold
-            }. CPUs ${JSON.stringify(cpuValues)}`
+            `App "${workingApp.getName()}" needs increase instance because ${maxCpuValue}>${scaleCpuThreshold}. CPUs ${JSON.stringify(
+                cpuValues
+            )}`
         );
     }
 
@@ -270,8 +275,8 @@ function processWorkingApp(conf: IConfig, workingApp: App) {
         }
     } else {
         if (
-            // Decrease workers if average CPUs load less then "release_cpu_threshold"
-            averageCpuValue < conf.release_cpu_threshold &&
+            // Decrease workers if average CPUs load less then "releaseCpuThreshold"
+            averageCpuValue < releaseCpuThreshold &&
             // Process only if we have more workers than default value
             workingApp.getActiveWorkersCount() > workingApp.getDefaultWorkersCount()
         ) {
