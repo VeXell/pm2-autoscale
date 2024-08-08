@@ -84,7 +84,7 @@ const detectActiveApps = (conf: IConfig) => {
             }
 
             if (appsToIgnore.includes(appName)) {
-                logger.debug(`App ${appName} is in ignore list`);
+                logger.debug(`App "${appName}" is in ignore list`);
                 delete APPS[appName];
                 return;
             }
@@ -92,7 +92,7 @@ const detectActiveApps = (conf: IConfig) => {
             const appConfig = getPm2AutoscaleConfig(app);
 
             if (appConfig.is_enabled === false) {
-                logger.debug(`Autoscale module is disabled in the app ${appName}`);
+                logger.debug(`Autoscale module is disabled in the app "${appName}"`);
                 delete APPS[appName];
                 return;
             }
@@ -284,7 +284,9 @@ function processWorkingApp(conf: IConfig, workingApp: App) {
             const secondsDiff = Math.round((now - workingApp.getLastDecreaseWorkersTime()) / 1000);
 
             if (secondsDiff > MIN_SECONDS_TO_RELEASE_WORKER) {
-                getLogger().debug(`Decrease workers for app "${workingApp.getName()}"`);
+                getLogger().debug(
+                    `Decrease workers for app "${workingApp.getName()}". Average CPU ${averageCpuValue} < Release CPU ${releaseCpuThreshold}`
+                );
                 const newWorkers = workingApp.getActiveWorkersCount() - 1;
 
                 if (newWorkers >= workingApp.getDefaultWorkersCount()) {
