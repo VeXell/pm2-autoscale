@@ -194,9 +194,9 @@ export const startPm2Connect = (conf: IConfig) => {
         if (conf.debug) {
             setInterval(() => {
                 getLogger().debug(
-                    `System: Free memory ${handleUnit(os.freemem())}, Total memory: ${handleUnit(
+                    `System: Free memory ${handleUnit(os.freemem())}, Total memory ${handleUnit(
                         os.totalmem()
-                    )}. CPU available: ${MAX_AVAILABLE_WORKERS_COUNT}`
+                    )}, CPU available: ${MAX_AVAILABLE_WORKERS_COUNT}`
                 );
 
                 if (Object.keys(APPS).length) {
