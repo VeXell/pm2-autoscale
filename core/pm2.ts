@@ -95,7 +95,7 @@ const detectActiveApps = (conf: IConfig) => {
             const appConfig = getPm2AutoscaleConfig(app);
 
             if (appConfig.is_enabled === false) {
-                logger.debug(`Autoscale module is disabled in the app "${appName}"`);
+                logger.debug(`Autoscale module is disabled for the app "${appName}"`);
                 delete APPS[appName];
                 return;
             }
