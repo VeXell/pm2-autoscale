@@ -1,3 +1,6 @@
+/// <reference path="../@types/global.d.ts" />
+/// <reference path="../@types/pm2.d.ts" />
+
 import pm2 from 'pm2';
 import os from 'node:os';
 import pidusage from 'pidusage';
@@ -13,11 +16,11 @@ type IAppData = { pids: number[]; pm2Env: pm2.Pm2Env; appConfig: IAppEnvConfig }
 const WORKER_CHECK_INTERVAL = 1000;
 const SHOW_STAT_INTERVAL = 10000;
 const MEMORY_MB = 1048576;
-const MIN_SECONDS_TO_ADD_WORKER = 10;
-const MIN_SECONDS_TO_RELEASE_WORKER = 30;
-
 const TOTAL_CPUS = getCpuCount();
-const MAX_AVAILABLE_WORKERS_COUNT = TOTAL_CPUS - 1;
+
+const DEFAULT_MIN_SECONDS_TO_ADD_WORKER = 10;
+const DEFAULT_MIN_SECONDS_TO_RELEASE_WORKER = 30;
+const DEFAULT_MAX_AVAILABLE_WORKERS_COUNT = TOTAL_CPUS - 1;
 
 const APPS: { [key: string]: App } = {};
 
@@ -196,7 +199,7 @@ export const startPm2Connect = (conf: IConfig) => {
                 getLogger().debug(
                     `System: Free memory ${handleUnit(os.freemem())}, Total memory ${handleUnit(
                         os.totalmem()
-                    )}, CPU available: ${MAX_AVAILABLE_WORKERS_COUNT}`
+                    )}, CPU available: ${TOTAL_CPUS}`
                 );
 
                 if (Object.keys(APPS).length) {
@@ -230,22 +233,48 @@ function processWorkingApp(conf: IConfig, workingApp: App) {
         workingApp.getAppConfig().scale_cpu_threshold ?? conf.scale_cpu_threshold;
     const releaseCpuThreshold =
         workingApp.getAppConfig().release_cpu_threshold ?? conf.release_cpu_threshold;
+    const configWorkers = workingApp.getAppConfig().max_workers ?? conf.max_workers;
+    const parsedConfigWorkers = parseInt(String(configWorkers), 10);
 
-    const needIncreaseInstances =
+    let maxWorkers = DEFAULT_MAX_AVAILABLE_WORKERS_COUNT;
+
+    if (configWorkers === 'max' || parsedConfigWorkers === 0) {
+        maxWorkers = TOTAL_CPUS;
+    } else if (!isNaN(parsedConfigWorkers) && parsedConfigWorkers > 0) {
+        maxWorkers = parsedConfigWorkers;
+    }
+
+    const needIncreaseWorkers =
         // Increase workers if any of CPUs loaded more then "scaleCpuThreshold"
         maxCpuValue >= scaleCpuThreshold &&
         // Increase workers only if we have available CPUs for that
-        workingApp.getActiveWorkersCount() < MAX_AVAILABLE_WORKERS_COUNT;
+        workingApp.getActiveWorkersCount() < maxWorkers;
 
-    if (needIncreaseInstances) {
+    const cpuValuesString = cpuValues.join(',');
+
+    if (needIncreaseWorkers) {
         getLogger().info(
-            `App "${workingApp.getName()}" needs increase instance because ${maxCpuValue}>${scaleCpuThreshold}. CPUs ${JSON.stringify(
-                cpuValues
-            )}`
+            `App "${workingApp.getName()}" needs increase workers because ${maxCpuValue}>${scaleCpuThreshold}. CPUs: ${cpuValuesString}`
         );
     }
 
-    if (needIncreaseInstances) {
+    if (workingApp.getActiveWorkersCount() >= maxWorkers) {
+        getLogger().debug(
+            `App "${workingApp.getName()}" is reached max workers "${maxWorkers}. CPUs: ${cpuValuesString}"`
+        );
+    }
+
+    const minSecondsToAddWorker =
+        workingApp.getAppConfig().min_seconds_to_add_worker ??
+        conf.min_seconds_to_add_worker ??
+        DEFAULT_MIN_SECONDS_TO_ADD_WORKER;
+
+    const minSecondsToReleaseWorker =
+        workingApp.getAppConfig().min_seconds_to_release_worker ??
+        conf.min_seconds_to_release_worker ??
+        DEFAULT_MIN_SECONDS_TO_RELEASE_WORKER;
+
+    if (needIncreaseWorkers) {
         const freeMem = Math.round(os.freemem() / MEMORY_MB);
         const avgAppUseMemory = workingApp.getAverageUsedMemory();
         const memoryAfterNewWorker = freeMem - avgAppUseMemory;
@@ -253,7 +282,7 @@ function processWorkingApp(conf: IConfig, workingApp: App) {
         if (memoryAfterNewWorker <= 0) {
             // Increase workers only if we have anought free memory
             getLogger().debug(
-                `Not enought memory to increase worker for app "${workingApp.getName()}". Free memory ${freeMem}MB, App average memeory ${avgAppUseMemory}MB `
+                `Not enough memory to increase worker for app "${workingApp.getName()}". Free memory ${freeMem}MB, App average memeory ${avgAppUseMemory}MB `
             );
             return;
         }
@@ -261,7 +290,7 @@ function processWorkingApp(conf: IConfig, workingApp: App) {
         const now = Number(new Date());
         const secondsDiff = Math.round((now - workingApp.getLastIncreaseWorkersTime()) / 1000);
 
-        if (secondsDiff > MIN_SECONDS_TO_ADD_WORKER) {
+        if (secondsDiff > minSecondsToAddWorker) {
             // Add small delay between increasing workers to detect load
             getLogger().debug(`Increase workers for app "${workingApp.getName()}"`);
 
@@ -283,7 +312,7 @@ function processWorkingApp(conf: IConfig, workingApp: App) {
             const now = Number(new Date());
             const secondsDiff = Math.round((now - workingApp.getLastDecreaseWorkersTime()) / 1000);
 
-            if (secondsDiff > MIN_SECONDS_TO_RELEASE_WORKER) {
+            if (secondsDiff > minSecondsToReleaseWorker) {
                 getLogger().debug(
                     `Decrease workers for app "${workingApp.getName()}". Average CPU ${averageCpuValue} < Release CPU ${releaseCpuThreshold}`
                 );
@@ -295,7 +324,7 @@ function processWorkingApp(conf: IConfig, workingApp: App) {
                     pm2.scale(workingApp.getName(), newWorkers, () => {
                         workingApp.updateLastDecreaseWorkersTime();
                         workingApp.isProcessing = false;
-                        getLogger().info(`App "${workingApp.getName()}" decresed one worker`);
+                        getLogger().info(`App "${workingApp.getName()}" decreased one worker`);
                     });
                 }
             }
