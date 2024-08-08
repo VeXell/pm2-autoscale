@@ -28,7 +28,7 @@ Default settings:
 
 -   `scale_cpu_threshold` Maximum value of CPU utilization one of application instances when the module will try to increase application instances. (default to `30`)
 -   `release_cpu_threshold` Average value of all CPUs utilization of the application when the module will decrease application instances (default to `5`)
--   `ignore_apps` Global setting to skip any app from the autoscale. You can enter multiple apps names separated by comma (default to "" - empty string)
+-   `ignore_apps` Global setting to skip app by name from the autoscale. You can enter multiple apps names separated by comma (default to "" - empty string)
 -   `debug` Enable debug mode to show logs from the module (default to `false`)
 
 To modify the module config values you can use the following commands:
@@ -37,6 +37,36 @@ To modify the module config values you can use the following commands:
 pm2 set pm2-autoscale:debug true
 pm2 set pm2-autoscale:scale_cpu_threshold 50
 pm2 set pm2-autoscale:ignore_apps app1,app2
+```
+
+## Spicific app configuration
+
+If you want to configure specific settings for each of your apps, you can do it by changing the env variable, for example, in your ecosystem.config file.
+
+Have a look at the example below:
+
+```json
+{
+    "apps": [
+        {
+            "name": "testapp",
+            "script": "build/app.js",
+            "instances": "4",
+            "autorestart": true,
+            "watch": false,
+            "max_memory_restart": "1024M",
+            "vizion": false,
+            "exec_mode": "cluster",
+            "env": {
+                "pm2_autoscale": {
+                    "is_enabled": true,
+                    "scale_cpu_threshold": 95,
+                    "release_cpu_threshold": 50
+                }
+            }
+        }
+    ]
+}
 ```
 
 ## Change log
