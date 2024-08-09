@@ -223,6 +223,7 @@ function processWorkingApp(conf: IConfig, workingApp: App) {
     }
 
     const cpuValues = [...workingApp.getCpuThreshold()];
+    const cpuValuesString = cpuValues.join(',');
 
     const maxCpuValue = Math.max(...workingApp.getCpuThreshold());
     const averageCpuValue = Math.round(
@@ -244,25 +245,17 @@ function processWorkingApp(conf: IConfig, workingApp: App) {
         maxWorkers = parsedConfigWorkers;
     }
 
-    const needIncreaseWorkers =
-        // Increase workers if any of CPUs loaded more then "scaleCpuThreshold"
-        maxCpuValue >= scaleCpuThreshold &&
-        // Increase workers only if we have available CPUs for that
-        workingApp.getActiveWorkersCount() < maxWorkers;
-
-    const cpuValuesString = cpuValues.join(',');
-
-    if (needIncreaseWorkers) {
-        getLogger().info(
-            `App "${workingApp.getName()}" needs increase workers because ${maxCpuValue}>${scaleCpuThreshold}. CPUs: ${cpuValuesString}`
-        );
-    }
-
     if (workingApp.getActiveWorkersCount() >= maxWorkers) {
         getLogger().debug(
             `App "${workingApp.getName()}" is reached max workers "${maxWorkers}. CPUs: ${cpuValuesString}"`
         );
     }
+
+    const needIncreaseWorkers =
+        // Increase workers if any of CPUs loaded more then "scaleCpuThreshold"
+        maxCpuValue >= scaleCpuThreshold &&
+        // Increase workers only if we have available CPUs for that
+        workingApp.getActiveWorkersCount() < maxWorkers;
 
     const minSecondsToAddWorker =
         workingApp.getAppConfig().min_seconds_to_add_worker ??
@@ -275,6 +268,10 @@ function processWorkingApp(conf: IConfig, workingApp: App) {
         DEFAULT_MIN_SECONDS_TO_RELEASE_WORKER;
 
     if (needIncreaseWorkers) {
+        getLogger().info(
+            `App "${workingApp.getName()}" needs increase workers because ${maxCpuValue}>${scaleCpuThreshold}. CPUs: ${cpuValuesString}`
+        );
+
         const freeMem = Math.round(os.freemem() / MEMORY_MB);
         const avgAppUseMemory = workingApp.getAverageUsedMemory();
         const memoryAfterNewWorker = freeMem - avgAppUseMemory;
