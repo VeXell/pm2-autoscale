@@ -1,6 +1,6 @@
 {
     "name": "pm2-autoscale",
-    "version": "1.3.1",
+    "version": "1.4.0",
     "description": "PM2 module to help dynamically scale applications based on utilization demand",
     "main": "index.js",
     "dependencies": {
@@ -28,7 +28,10 @@
         "scale_cpu_threshold": 30,
         "release_cpu_threshold": 5,
         "debug": false,
-        "ignore_apps": ""
+        "ignore_apps": "",
+        "max_workers": "-1",
+        "min_seconds_to_add_worker": 10,
+        "min_seconds_to_release_worker": 30
     },
     "devDependencies": {
         "@types/node": "^18.19.3",

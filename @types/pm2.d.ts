@@ -12,5 +12,6 @@ declare module 'pm2' {
         env: { pm2_autoscale: string } & Record<string, string>;
     };
 
-    function scale(appName: string, process: number | string, callback: () => void): void;
+    type ScaleAmount = number | `+${number}` | `-${number}`;
+    function scale(appName: string, process: ScaleAmount, callback: () => void): void;
 }
